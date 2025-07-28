@@ -38,10 +38,10 @@ const userSchema = new Schema<IUser>(
             enum: Object.values(Role),
             default: Role.USER
         },
-        phone: {
-            type: String,
-            unique: true
-        },
+        // phone: {
+        //     type: String,
+        //     // unique: true
+        // },
         picture: {
             type: String
         },

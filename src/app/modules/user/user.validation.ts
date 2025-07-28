@@ -1,6 +1,5 @@
 
 import z from "zod";
-import { Role } from "./user.interface";
 
 export const RoleEnum = z.enum(["SUPER_ADMIN", "ADMIN", "USER", "AGENT"]);
 
@@ -23,12 +22,12 @@ export const createUserZodSchema = z.object({
         .regex(/\d/, { message: "Password must include at least one digit" })
         .regex(/[!@#$%^&*]/, { message: "Password must include at least one special character" }),
 
-    phone: z
-        .string({ message: "Phone number must be string" })
-        .regex(/^(?:\+8801|01)[0-9]{9}$/, {
-            message: "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX"
-        })
-        .optional(),
+    // phone: z
+    //     .string({ message: "Phone number must be string" })
+    //     .regex(/^(?:\+8801|01)[0-9]{9}$/, {
+    //         message: "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX"
+    //     })
+    //     .optional(),
 
     address: z
         .string({ message: "Address must be string" })
