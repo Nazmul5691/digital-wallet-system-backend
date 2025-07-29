@@ -2,7 +2,8 @@ import { Types } from "mongoose";
 
 export enum IsActive {
     BLOCKED = "BLOCKED",
-    ACTIVE = "ACTIVE"
+    ACTIVE = "ACTIVE",
+    INACTIVE = "INACTIVE"
 }
 
 
