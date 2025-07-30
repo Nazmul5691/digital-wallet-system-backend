@@ -16,9 +16,13 @@ const modulesRoutes = [
         route: AuthRouters
     },
     {
-        path: "/wallet",
+        path: "/wallets",
         route: WalletRoutes
-    }
+    },
+    // {
+    //     path: "/transaction",
+    //     route: WalletRoutes
+    // }
 ]
 
 
