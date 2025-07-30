@@ -1,14 +1,15 @@
 import { envVars } from "../config/env";
-import { IAuthProvider, IUser, Role } from "../modules/user/user.interface";
+import { IAuthProvider, IsActive, IUser, Role } from "../modules/user/user.interface";
 import { User } from "../modules/user/user.model";
 import bcryptjs from "bcryptjs"
+import { Wallet } from "../modules/wallet/wallet.model";
 
 
-export const seedSuperAdmin = async() =>{
+export const seedSuperAdmin = async () => {
     try {
-        const isSuperAdminExit = await User.findOne({email: envVars.SUPER_ADMIN_EMAIL});
+        const isSuperAdminExit = await User.findOne({ email: envVars.SUPER_ADMIN_EMAIL });
 
-        if(isSuperAdminExit){
+        if (isSuperAdminExit) {
             console.log("Super Admin already exists");
             return;
         }
@@ -33,6 +34,16 @@ export const seedSuperAdmin = async() =>{
         }
 
         const superAdmin = await User.create(payload);
+
+        const wallet = await Wallet.create({
+            userId: superAdmin._id,
+            balance: 50,
+            status: IsActive.ACTIVE,
+        });
+
+        await User.findByIdAndUpdate(superAdmin._id, {
+            walletId: wallet._id,
+        });
 
         console.log("superAdmin successfully created");
         console.log(superAdmin);

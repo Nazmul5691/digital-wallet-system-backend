@@ -1,27 +1,19 @@
 
+import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import { userSearchableFields } from "./user.constant";
-import { IAuthProvider, IUser } from "./user.interface";
+import { IAuthProvider, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
 import bcryptjs from 'bcryptjs'
 import httpStatus from 'http-status-codes';
+import { Wallet } from "../wallet/wallet.model";
 
 
 
 
 // create user
-// const createUser = async (payload: Partial<IUser>) => {
-//     const { name, email } = payload;
-
-//     const user = await User.create({
-//         name,
-//         email
-//     })
-
-//     return user;
-// }
 
 const createUser = async (payload: Partial<IUser>) => {
 
@@ -44,9 +36,18 @@ const createUser = async (payload: Partial<IUser>) => {
         ...rest
     })
 
+    // ✅ Now create wallet for ALL roles
+    const wallet = await Wallet.create({
+        userId: user._id,
+        balance: 50,
+        status: "ACTIVE",
+    });
+
+    user.walletId = wallet._id;
+    await user.save();
+
     return user;
 }
-
 
 
 // get all users
@@ -60,7 +61,7 @@ const createUser = async (payload: Partial<IUser>) => {
 //             total: totalUsers
 //         },
 //         data: users,
-        
+
 //     }
 // }
 
@@ -87,23 +88,73 @@ const getAllUsers = async (query: Record<string, string>) => {
 }
 
 
-const getSingleUser = async (id: string) =>{
+const getSingleUser = async (id: string) => {
 
     const user = await User.findById(id);
 
-    return{
+    return {
         data: user
     }
 }
 
 
-const deleteUser = async (id: string) =>{
-    
-    const user = await User.findByIdAndDelete(id);
+//delete a User
+const deleteUser = async (id: string) => {
 
-    return{
-        data: user
+    const deletedUser = await User.findByIdAndDelete(id);
+
+    if (!deletedUser) {
+        throw new AppError(httpStatus.NOT_FOUND, "User not found");
     }
+
+    return deletedUser;
+};
+
+//update user
+const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
+
+    /**
+     * email - can not change
+     * name, phone, password, address
+     * password - re hashing
+     * only admin and superAdmin can update - role, isDeleted 
+     * 
+     * promoting to superAdmin  - only superAdmin
+     */
+
+    const ifUserExists = await User.findById(userId);
+
+    if (!ifUserExists) {
+        throw new AppError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    // email cannot be change
+    if (payload.email) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Email cannot be updated");
+    }
+
+    if (payload.name || payload.address || payload.password) {
+        if (decodedToken.userId !== userId) {
+            throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to update this information");
+        }
+    }
+
+    // Only admin or superAdmin can update role, isDeleted, isActive, isVerified
+    if (payload.role || payload.isDeleted !== undefined || payload.isActive !== undefined || payload.isVerified !== undefined) {
+        if (decodedToken.role !== Role.ADMIN && decodedToken.role !== Role.SUPER_ADMIN) {
+            throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+        }
+    }
+
+    if (payload.password) {
+        payload.password = await bcryptjs.hash(payload.password, envVars.BCRYPT_SALT_ROUND)
+    }
+
+
+    const newUpdatedUser = await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
+
+    return newUpdatedUser;
+
 }
 
 
@@ -112,5 +163,6 @@ export const UserServices = {
     createUser,
     getAllUsers,
     getSingleUser,
-    deleteUser
+    deleteUser,
+    updateUser
 }
