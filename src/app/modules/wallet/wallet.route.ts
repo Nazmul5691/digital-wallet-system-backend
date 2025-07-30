@@ -9,6 +9,9 @@ const router = express.Router();
 
 // // User-only routes
 router.post('/deposit', checkAuth(Role.ADMIN, Role.SUPER_ADMIN, Role.USER), WalletControllers.deposit);
+router.post('/withdraw', checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.withdraw);
+router.post('/send-money', checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.sendMoney);
+
 // router.post('/withdraw', auth(Role.USER), WalletController.withdraw);
 // router.post('/send', auth(Role.USER), WalletController.sendMoney);
 
