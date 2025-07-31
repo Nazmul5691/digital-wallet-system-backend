@@ -5,34 +5,12 @@ import httpStatus from 'http-status-codes';
 import { TransactionServices } from "./transaction.service";
 
 
-// view transaction
-// const viewTransaction = catchAsync(async (req: Request, res: Response) => {
-//     const { userId: authenticatedUserId, role } = req.user;
 
+// view my transaction
+const viewMyTransactionHistory = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.user;
 
-//     const result = await TransactionServices.viewTransaction({
-//         authenticatedUserId,
-//         role,
-//         query: req.query as Record<string, string>,
-//     });
-
-//     sendResponse(res, {
-//         statusCode: httpStatus.OK,
-//         success: true,
-//         message: 'Transaction history retrieved successfully!',
-//         data: result.data,
-//         meta: result.meta,
-//     });
-// });
-
-const viewTransaction = catchAsync(async (req: Request, res: Response) => {
-    const { userId: authenticatedUserId, role } = req.user;
-
-    const result = await TransactionServices.viewTransaction({
-        authenticatedUserId,
-        role,
-        query: req.query as Record<string, string>,
-    });
+    const result = await TransactionServices.viewMyTransactionHistory(userId,req.query as Record<string, string>);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -44,8 +22,7 @@ const viewTransaction = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-
-
+// get All Transactions
 const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
     // For this endpoint, we assume the user is ADMIN/SUPER_ADMIN
     // The service handles filtering based on query params like 'userId' or 'type'
@@ -63,8 +40,8 @@ const getAllTransactions = catchAsync(async (req: Request, res: Response) => {
 
 
 export const TransactionControllers = {
-    viewTransaction,
-    getAllTransactions,
+    viewMyTransactionHistory,
+    getAllTransactions
 }
 
 

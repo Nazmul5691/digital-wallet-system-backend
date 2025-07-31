@@ -15,7 +15,6 @@ import { Types } from "mongoose";
 
 
 // create user
-
 const createUser = async (payload: Partial<IUser>) => {
 
     const { email, password, ...rest } = payload;
@@ -37,7 +36,7 @@ const createUser = async (payload: Partial<IUser>) => {
         ...rest
     })
 
-    // ✅ Now create wallet for ALL roles
+
     const wallet = await Wallet.create({
         userId: user._id,
         balance: 50,
@@ -52,20 +51,6 @@ const createUser = async (payload: Partial<IUser>) => {
 
 
 // get all users
-// const getAllUsers = async() =>{
-//     const users = await User.find();
-
-//     const totalUsers = await User.countDocuments()
-
-//     return{
-//         meta: {
-//             total: totalUsers
-//         },
-//         data: users,
-
-//     }
-// }
-
 const getAllUsers = async (query: Record<string, string>) => {
 
     const queryBuilder = new QueryBuilder(User.find(), query)
@@ -89,6 +74,7 @@ const getAllUsers = async (query: Record<string, string>) => {
 }
 
 
+// get Single User
 const getSingleUser = async (id: string) => {
 
     const user = await User.findById(id);
@@ -110,6 +96,7 @@ const deleteUser = async (id: string) => {
 
     return deletedUser;
 };
+
 
 //update user
 const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
@@ -155,17 +142,17 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
     const newUpdatedUser = await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
 
     return newUpdatedUser;
-
 }
+
 
 
 
 //get all agents
 const getAllAgents = async (query: Record<string, string>) => {
     // Define searchable fields specific for agents (which are also users)
-    const agentSearchableFields = ['name.firstName', 'name.lastName', 'email', 'phoneNumber', 'address'];
+    const agentSearchableFields = ['name', 'email'];
 
-    // Start with a query that specifically finds users with the 'AGENT' role
+
     const queryBuilder = new QueryBuilder(User.find({ role: Role.AGENT }), query)
         .search(agentSearchableFields)
         .filter()
@@ -186,9 +173,9 @@ const getAllAgents = async (query: Record<string, string>) => {
 
 
 
-
+// update Agent Approval Status
 const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) => {
-    
+
     const user = await User.findById(new Types.ObjectId(userId));
     if (!user) {
         throw new AppError(httpStatus.NOT_FOUND, 'User (Agent) not found.');
@@ -196,7 +183,7 @@ const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) =>
     if (user.role !== Role.AGENT) {
         throw new AppError(httpStatus.FORBIDDEN, 'The user is not an agent.');
     }
-    
+
 
     user.isApproved = isApproved;
     await user.save();

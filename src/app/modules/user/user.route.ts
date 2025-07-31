@@ -24,16 +24,8 @@ router.delete("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.d
 
 router.patch("/:id", validateRequest(updateUserZodSchema), checkAuth(...Object.values(Role)), UserControllers.updateUser);
 
-router.patch(
-    '/agents/approval-status/:userId',
-    checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
-    UserControllers.updateAgentApprovalStatus
-);
 
-
-
-
-
+router.patch('/agents/approval-status/:userId',checkAuth(Role.ADMIN, Role.SUPER_ADMIN),UserControllers.updateAgentApprovalStatus);
 
 
 

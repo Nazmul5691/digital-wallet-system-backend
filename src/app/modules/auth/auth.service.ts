@@ -6,7 +6,7 @@ import httpStatus from 'http-status-codes';
 import bcryptjs from 'bcryptjs';
 
 
-
+// credentials Login
 const credentialsLogin = async (payload: Partial<IUser>) => {
 
     const { email, password } = payload;
@@ -24,17 +24,6 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
     }
 
 
-    // const jwtPayload = {
-    //     userId : isUserExit._id,
-    //     email: isUserExit.email,
-    //     role: isUserExit.role
-    // }
-
-    // // const accessToken = jwt.sign(jwtPayload, "secret", {expiresIn: "1d"})
-    // const accessToken = generateToken(jwtPayload, envVars.JWT_ACCESS_SECRET, envVars.JWT_ACCESS_EXPIRES)
-
-    // const refreshToken = generateToken(jwtPayload, envVars.JWT_REFRESH_SECRET, envVars.JWT_REFRESH_EXPIRES)
-
     const userTokens = createUserTokens(isUserExit);
 
     // delete isUserExit.password
@@ -47,10 +36,11 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
         refreshToken: userTokens.refreshToken,
         user: rest
     }
-
-
 }
 
+
+
+// get New Access Token
 const getNewAccessToken = async (refreshToken: string) => {
     const newAccessToken = await createNewAccessTokenWithRefreshToken(refreshToken)
 

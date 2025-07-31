@@ -8,6 +8,7 @@ import AppError from "../../errorHelpers/appError";
 
 
 
+// create User
 const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const user = await UserServices.createUser(req.body);
 
@@ -22,19 +23,6 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 
 
 // get all users
-// const getAllUsers = async(req: Request, res: Response) =>{
-//     try {
-//         const users = await UserServices.getAllUsers();
-
-//         res.status(200).json({
-//             message: "Users retrieved successfully",
-//             users
-//         })
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-
 const getAllUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
     const query = req.query
@@ -51,23 +39,6 @@ const getAllUsers = catchAsync(async (req: Request, res: Response, next: NextFun
 
 
 // get single user
-
-// const getSingleUser = async(req: Request, res: Response) =>{
-//     try {
-//         const id = req.params.id
-//         const user = await UserServices.getSingleUser(id);
-
-
-//         res.status(200).json({
-//             message: "User retrieved successfully",
-//             user
-//         })
-
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-
 const getSingleUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     const result = await UserServices.getSingleUser(id);
@@ -79,7 +50,6 @@ const getSingleUser = catchAsync(async (req: Request, res: Response, next: NextF
         data: result.data
     })
 })
-
 
 
 // delete a user
@@ -134,11 +104,12 @@ const getAllAgents = catchAsync(async (req: Request, res: Response) => {
 
 
 
+// update Agent Approval Status
 const updateAgentApprovalStatus = catchAsync(async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { isApproved } = req.body as { isApproved: boolean };
 
-    // ইনপুট ভ্যালিডেশন
+    
     if (typeof isApproved !== 'boolean') {
         throw new AppError(httpStatus.BAD_REQUEST, 'The "isApproved" status must be a boolean value (true/false).');
     }

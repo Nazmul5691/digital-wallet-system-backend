@@ -538,6 +538,7 @@ const getAllWallets = async (query: Record<string, string>) => {
 };
 
 
+// update Wallet Status
 const updateWalletStatus = async (walletId: string, status: IsActive) => {
 
     if (status !== IsActive.BLOCKED && status !== IsActive.ACTIVE) {
@@ -560,6 +561,32 @@ const updateWalletStatus = async (walletId: string, status: IsActive) => {
 
 
 
+// deactivate Wallet
+const deactivateMyWallet = async (userId: string, status: IsActive) => {
+
+    if (status === IsActive.ACTIVE) {
+        throw new AppError(httpStatus.FORBIDDEN, 'You cannot activate your account. Only an admin can update your wallet status.');
+    }
+    else if (status !== IsActive.INACTIVE) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status provided. To deactivate, status must be "INACTIVE".');
+    }
+
+    const wallet = await Wallet.findOne({ userId: new Types.ObjectId(userId) });
+
+    if (!wallet) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Wallet not found.');
+    }
+    if (wallet.status === status) {
+        throw new AppError(httpStatus.BAD_REQUEST, `Wallet is already ${status}.`);
+    }
+
+    wallet.status = status;
+    await wallet.save();
+
+    return wallet;
+};
+
+
 
 export const WalletServices = {
     deposit,
@@ -568,6 +595,7 @@ export const WalletServices = {
     cashIn,
     cashOut,
     getAllWallets,
-    updateWalletStatus
+    updateWalletStatus,
+    deactivateMyWallet
 };
 

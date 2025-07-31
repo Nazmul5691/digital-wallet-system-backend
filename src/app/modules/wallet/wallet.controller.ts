@@ -1,5 +1,5 @@
 
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from 'http-status-codes';
@@ -12,8 +12,6 @@ import { IsActive } from "../user/user.interface";
 const deposit = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user.userId; // from auth middleware
     const amount = req.body.amount;
-
-    // console.log('User ID from auth middleware (req.user._id):', userId);
 
     const result = await WalletServices.deposit({
         userId,
@@ -76,10 +74,9 @@ const sendMoney = catchAsync(async (req: Request, res: Response) => {
 
 // cash in
 const cashIn = catchAsync(async (req: Request, res: Response) => {
-    const agentUserId = req.user.userId; // ID of the authenticated agent
-    const role = req.user.role; // Role of the authenticated agent
+    const agentUserId = req.user.userId;
+    const role = req.user.role;
 
-    // Get target user ID and amount from the request body
     const { targetUserId, amount } = req.body;
 
     const result = await WalletServices.cashIn({
@@ -90,7 +87,7 @@ const cashIn = catchAsync(async (req: Request, res: Response) => {
     });
 
     sendResponse(res, {
-        statusCode: httpStatus.CREATED, // 201 Created is appropriate for a successful resource creation/modification
+        statusCode: httpStatus.CREATED,
         success: true,
         message: 'Cash-in successful!',
         data: result,
@@ -137,6 +134,7 @@ const getAllWallets = catchAsync(async (req: Request, res: Response) => {
 
 
 
+// block a Wallet
 const blockWallet = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -150,6 +148,8 @@ const blockWallet = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+
+// unblock a Wallet
 const unblockWallet = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -164,6 +164,20 @@ const unblockWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+// deactivate Wallet
+const deactivateMyWallet = catchAsync(async (req, res) => {
+    const userId = req.user.userId;
+    const { status } = req.body;
+
+    const result = await WalletServices.deactivateMyWallet(userId, status as IsActive);
+
+    res.status(httpStatus.OK).json({
+        success: true,
+        message: 'Wallet deactivated successfully!',
+        data: result,
+    });
+});
+
 
 
 
@@ -175,6 +189,6 @@ export const WalletControllers = {
     cashOut,
     getAllWallets,
     blockWallet,
-    unblockWallet
-
+    unblockWallet,
+    deactivateMyWallet
 }
