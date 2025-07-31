@@ -5,14 +5,12 @@ import httpStatus from 'http-status-codes';
 import { TransactionType } from '../transaction/transaction.interface';
 import AppError from '../../errorHelpers/appError';
 import { Wallet } from './wallet.model';
+import { User } from '../user/user.model';
 import { QueryBuilder } from '../../utils/queryBuilder';
+import { IsActive } from '../user/user.interface';
 
 
-interface IGetTransactionsPayload {
-    authenticatedUserId: string; // The ID of the currently authenticated user
-    role: string; // The role of the authenticated user
-    query: Record<string, string>; // The raw query object from req.query
-}
+
 
 // add money
 const deposit = async (payload: { userId: string; amount: number | string }) => {
@@ -114,7 +112,6 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
 
     const parsedAmount = Number(amount);
 
-
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
         throw new AppError(httpStatus.BAD_REQUEST, 'Amount must be a valid number greater than 0.');
     }
@@ -123,12 +120,19 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
         throw new AppError(httpStatus.FORBIDDEN, 'Agents are not allowed to send money.');
     }
 
+    if (!receiverId) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Receiver ID is required.');
+    }
+
+    if (!Types.ObjectId.isValid(receiverId)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid Receiver ID.');
+    }
+
     let session = null;
 
     try {
         session = await mongoose.startSession();
         session.startTransaction();
-
 
         const senderWallet = await Wallet.findOne({ userId: new Types.ObjectId(senderUserId) }).session(session);
 
@@ -136,17 +140,13 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
             throw new AppError(httpStatus.NOT_FOUND, 'Sender wallet not found.');
         }
 
-
         if (senderWallet.balance < parsedAmount) {
             throw new AppError(httpStatus.BAD_REQUEST, 'Insufficient balance.');
         }
 
-
-
         if (receiverId.toString() === senderUserId.toString()) {
             throw new AppError(httpStatus.BAD_REQUEST, 'Cannot send money to yourself.');
         }
-
 
         const receiverWallet = await Wallet.findOne({ userId: new Types.ObjectId(receiverId) }).session(session);
 
@@ -185,6 +185,206 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
             await session.abortTransaction();
         }
         throw error;
+
+    } finally {
+        if (session) {
+            session.endSession();
+        }
+    }
+};
+
+
+// cash in
+const cashIn = async (payload: { agentUserId: string; targetUserId: string; amount: number | string; role: string }) => {
+
+    const { agentUserId, targetUserId, amount, role } = payload;
+
+    const parsedAmount = Number(amount);
+
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Amount must be a valid number greater than 0.');
+    }
+
+    if (role !== 'AGENT') {
+        throw new AppError(httpStatus.FORBIDDEN, 'Only agents are allowed to perform cash-in operations.');
+    }
+
+    if (!targetUserId) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Target User ID is required for cash-in.');
+    }
+    if (!Types.ObjectId.isValid(targetUserId)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid Target User ID format.');
+    }
+
+    if (targetUserId.toString() === agentUserId.toString()) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Agents cannot cash-in to their own wallet via this operation. Use deposit instead.');
+    }
+
+    let session = null;
+
+    try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        const agentWallet = await Wallet.findOne({ userId: new Types.ObjectId(agentUserId) }).session(session);
+
+        if (!agentWallet) {
+            throw new AppError(httpStatus.NOT_FOUND, 'Agent wallet not found. Please ensure the agent has a wallet.');
+        }
+
+        if (agentWallet.balance < parsedAmount) {
+            throw new AppError(httpStatus.BAD_REQUEST, 'Agent has insufficient balance to perform this cash-in.');
+        }
+
+        const targetUserWallet = await Wallet.findOne({ userId: new Types.ObjectId(targetUserId) }).session(session);
+
+        if (!targetUserWallet) {
+            throw new AppError(httpStatus.NOT_FOUND, 'Target user or their wallet not found.');
+        }
+
+        agentWallet.balance -= parsedAmount;
+        await agentWallet.save({ session });
+
+        targetUserWallet.balance += parsedAmount;
+        await targetUserWallet.save({ session });
+
+
+        const [cashInTxn] = await Transaction.create([{
+            wallet: targetUserWallet._id,
+            senderId: new Types.ObjectId(agentUserId),
+            receiverId: new Types.ObjectId(targetUserId),
+            amount: parsedAmount,
+            type: TransactionType.CASH_IN,
+            note: `Cash-in of ${parsedAmount} by agent ${agentUserId} to user ${targetUserId}`,
+        }], { session });
+
+
+        await Transaction.create([{
+            wallet: agentWallet._id,
+            senderId: new Types.ObjectId(agentUserId),
+            receiverId: new Types.ObjectId(targetUserId),
+            amount: parsedAmount,
+            type: TransactionType.WITHDRAW,
+            note: `Money cashed out for user ${targetUserId} by agent`,
+        }], { session });
+
+
+        await session.commitTransaction();
+
+        return {
+            message: 'Cash-in successful',
+            agentWallet: agentWallet,
+            targetUserWallet: targetUserWallet,
+            transaction: cashInTxn,
+        };
+
+    } catch (error) {
+        if (session) {
+            await session.abortTransaction();
+        }
+        throw error;
+
+    } finally {
+        if (session) {
+            session.endSession();
+        }
+    }
+};
+
+
+// cash out
+const cashOut = async (payload: { agentUserId: string; targetUserId: string; amount: number | string; role: string }) => {
+    const { agentUserId, targetUserId, amount, role } = payload;
+
+    const parsedAmount = Number(amount);
+
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Amount must be a valid number greater than 0.');
+    }
+
+
+    if (role !== 'AGENT') {
+        throw new AppError(httpStatus.FORBIDDEN, 'Only agents are allowed to perform cash-out operations.');
+    }
+
+
+    if (!targetUserId) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Target User ID is required for cash-out.');
+    }
+    if (!Types.ObjectId.isValid(targetUserId)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid Target User ID format.');
+    }
+
+
+    if (targetUserId.toString() === agentUserId.toString()) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Agents cannot cash-out from their own wallet using this operation. Use withdraw instead.');
+    }
+
+    let session = null;
+
+    try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+
+        const agentWallet = await Wallet.findOne({ userId: new Types.ObjectId(agentUserId) }).session(session);
+
+        if (!agentWallet) {
+            throw new AppError(httpStatus.NOT_FOUND, 'Agent wallet not found. Please ensure the agent has a wallet.');
+        }
+
+        const targetUserWallet = await Wallet.findOne({ userId: new Types.ObjectId(targetUserId) }).session(session);
+
+        if (!targetUserWallet) {
+            throw new AppError(httpStatus.NOT_FOUND, 'Target user or their wallet not found.');
+        }
+
+        if (targetUserWallet.balance < parsedAmount) {
+            throw new AppError(httpStatus.BAD_REQUEST, 'Target user has insufficient balance for this cash-out.');
+        }
+
+        targetUserWallet.balance -= parsedAmount;
+        await targetUserWallet.save({ session });
+
+        agentWallet.balance += parsedAmount;
+        await agentWallet.save({ session });
+
+
+        const [cashOutTxn] = await Transaction.create([{
+            wallet: targetUserWallet._id,
+            senderId: new Types.ObjectId(targetUserId),
+            receiverId: new Types.ObjectId(agentUserId),
+            amount: parsedAmount,
+            type: TransactionType.CASH_OUT,
+            note: `Cash-out of ${parsedAmount} by agent ${agentUserId} from user ${targetUserId}`,
+        }], { session });
+
+        await Transaction.create([{
+            wallet: agentWallet._id,
+            senderId: new Types.ObjectId(targetUserId),
+            receiverId: new Types.ObjectId(agentUserId),
+            amount: parsedAmount,
+            type: TransactionType.DEPOSIT,
+            note: `Money cashed in from user ${targetUserId} by agent`,
+        }], { session });
+
+        await session.commitTransaction();
+
+        return {
+            message: 'Cash-out successful',
+            agentWallet: agentWallet,
+            targetUserWallet: targetUserWallet,
+            transaction: cashOutTxn,
+        };
+
+    } catch (error) {
+        if (session) {
+            await session.abortTransaction();
+        }
+        throw error;
+
     } finally {
         if (session) {
             session.endSession();
@@ -194,64 +394,57 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
 
 
 
-const viewTransaction = async (payload: IGetTransactionsPayload) => {
-    const { authenticatedUserId, role, query } = payload;
+// get all wallets
+const getAllWallets = async (query: Record<string, string>) => {
 
-    let transactionQuery: Record<string, any> = {}; // This will hold our base query for transactions
+    const walletSearchableFields: any = [];
 
-    // Role-based filtering for transactions
-    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
-        // Admins/Super Admins can view all transactions or filter by a specific userId
-        const targetUserId = query.userId; // Admin can provide a userId in query params
-
-        if (targetUserId) {
-            transactionQuery.$or = [
-                { senderId: new Types.ObjectId(targetUserId) },
-                { receiverId: new Types.ObjectId(targetUserId) }
-            ];
-        }
-        // If no userId provided by Admin, transactionQuery remains empty, QueryBuilder will fetch all.
-    }
-    else if (role === 'USER') {
-        // Users can only view their own transactions
-        const targetUserId = query.userId; // User might provide their own ID, but we enforce it
-
-        if (targetUserId && targetUserId !== authenticatedUserId) {
-            throw new AppError(httpStatus.FORBIDDEN, 'You are not authorized to view other users\' transaction history.');
-        }
-        transactionQuery.$or = [
-            { senderId: new Types.ObjectId(authenticatedUserId) },
-            { receiverId: new Types.ObjectId(authenticatedUserId) }
-        ];
-    } else {
-        // If role is AGENT or any other role not explicitly handled here
-        throw new AppError(httpStatus.FORBIDDEN, 'You are not authorized to view this transaction history.');
-    }
-
-    // Add type filter if provided in the original query
-    if (query.type) {
-        transactionQuery.type = query.type;
-    }
-
-    // Initialize QueryBuilder with the base query and the raw request query
-    const transactionQueryBuilder = new QueryBuilder(
-        Transaction.find(transactionQuery), // Start with our role-based filter
-        query // Pass the raw query for search, sort, paginate, fields
+    const queryBuilder = new QueryBuilder(
+        Wallet.find().populate('userId'),
+        query
     )
-        .search(['note', 'type']) // Example searchable fields for transactions
-        .filter() // Applies general filters from query (excluding specific ones)
+        .search(walletSearchableFields)
+        .filter()
         .sort()
         .fields()
         .paginate();
 
-    const result = await transactionQueryBuilder.build().lean(); // Execute query and convert to plain JS objects
-    const meta = await transactionQueryBuilder.getMeta(); // Get pagination metadata
+    const [data, meta] = await Promise.all([
+        queryBuilder.build().lean(),
+        queryBuilder.getMeta()
+    ]);
 
     return {
-        meta,
-        data: result,
+        data,
+        meta
     };
 };
+
+
+
+
+const updateWalletStatus = async (walletId: string, status: IsActive) => {
+
+    if (status !== IsActive.BLOCKED && status !== IsActive.ACTIVE) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status provided. Status must be "BLOCKED" or "ACTIVE".');
+    }
+
+    const wallet = await Wallet.findById(walletId);
+
+    if (!wallet) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Wallet not found.');
+    }
+
+
+    wallet.status = status;
+    await wallet.save();
+
+
+    return wallet;
+};
+
+
+
 
 
 
@@ -260,6 +453,9 @@ export const WalletServices = {
     deposit,
     withdraw,
     sendMoney,
-    viewTransaction
+    cashIn,
+    cashOut,
+    getAllWallets,
+    updateWalletStatus
 };
 

@@ -9,6 +9,7 @@ import { User } from "./user.model";
 import bcryptjs from 'bcryptjs'
 import httpStatus from 'http-status-codes';
 import { Wallet } from "../wallet/wallet.model";
+import { Types } from "mongoose";
 
 
 
@@ -158,11 +159,59 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
 }
 
 
+//get all agents
+const getAllAgents = async (query: Record<string, string>) => {
+    // Define searchable fields specific for agents (which are also users)
+    const agentSearchableFields = ['name.firstName', 'name.lastName', 'email', 'phoneNumber', 'address'];
+
+    // Start with a query that specifically finds users with the 'AGENT' role
+    const queryBuilder = new QueryBuilder(User.find({ role: Role.AGENT }), query)
+        .search(agentSearchableFields)
+        .filter()
+        .sort()
+        .fields()
+        .paginate();
+
+    const [data, meta] = await Promise.all([
+        queryBuilder.build().lean(),
+        queryBuilder.getMeta()
+    ]);
+
+    return {
+        data,
+        meta
+    };
+};
+
+
+
+
+const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) => {
+    // 1. ইউজার খুঁজে বের করা এবং নিশ্চিত করা যে সে একজন এজেন্ট।
+    const user = await User.findById(new Types.ObjectId(userId));
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User (Agent) not found.');
+    }
+    if (user.role !== Role.AGENT) {
+        throw new AppError(httpStatus.FORBIDDEN, 'The user is not an agent.');
+    }
+    
+    // 2. এজেন্টের isApproved স্ট্যাটাস আপডেট করা।
+    user.isApproved = isApproved;
+    await user.save();
+
+    return user;
+};
+
+
+
 
 export const UserServices = {
     createUser,
     getAllUsers,
     getSingleUser,
     deleteUser,
-    updateUser
+    updateUser,
+    getAllAgents,
+    updateAgentApprovalStatus
 }

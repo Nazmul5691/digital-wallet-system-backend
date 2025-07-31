@@ -4,6 +4,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from 'http-status-codes';
 import { JwtPayload } from "jsonwebtoken";
+import AppError from "../../errorHelpers/appError";
 
 
 
@@ -117,7 +118,40 @@ const updateUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 })
 
 
+//get all agents
+const getAllAgents = catchAsync(async (req: Request, res: Response) => {
+    const query = req.query
+    const result = await UserServices.getAllAgents(query as Record<string, string>);
 
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Agents retrieved successfully!',
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
+
+
+const updateAgentApprovalStatus = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { isApproved } = req.body as { isApproved: boolean };
+
+    // ইনপুট ভ্যালিডেশন
+    if (typeof isApproved !== 'boolean') {
+        throw new AppError(httpStatus.BAD_REQUEST, 'The "isApproved" status must be a boolean value (true/false).');
+    }
+
+    const result = await UserServices.updateAgentApprovalStatus(userId, isApproved);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: `Agent approval status updated to ${result.isApproved} successfully!`,
+        data: result,
+    });
+});
 
 
 
@@ -126,5 +160,7 @@ export const UserControllers = {
     getAllUsers,
     getSingleUser,
     deleteUser,
-    updateUser
+    updateUser,
+    getAllAgents,
+    updateAgentApprovalStatus
 }
