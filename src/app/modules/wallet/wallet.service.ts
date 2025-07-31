@@ -33,6 +33,10 @@ const deposit = async (payload: { userId: string; amount: number | string }) => 
             throw new AppError(httpStatus.NOT_FOUND, 'Wallet not found');
         }
 
+        if (wallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Wallet is currently ${wallet.status}. Transaction is not allowed.`);
+        }
+
 
         const [pendingTransaction] = await Transaction.create([{
             wallet: wallet._id,
@@ -107,6 +111,10 @@ const withdraw = async (payload: { userId: string; amount: number | string; role
 
         if (!wallet) {
             throw new AppError(httpStatus.NOT_FOUND, 'Wallet not found.');
+        }
+
+        if (wallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Wallet is currently ${wallet.status}. Transaction is not allowed.`);
         }
 
         if (wallet.balance < parsedAmount) {
@@ -195,6 +203,10 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
             throw new AppError(httpStatus.NOT_FOUND, 'Sender wallet not found.');
         }
 
+        if (senderWallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Sender wallet is currently ${senderWallet.status}. Transaction is not allowed.`);
+        }
+
         if (senderWallet.balance < parsedAmount) {
             throw new AppError(httpStatus.BAD_REQUEST, 'Insufficient balance.');
         }
@@ -202,6 +214,10 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
         const receiverWallet = await Wallet.findOne({ userId: new Types.ObjectId(receiverId) }).session(session);
         if (!receiverWallet) {
             throw new AppError(httpStatus.NOT_FOUND, 'Receiver wallet not found.');
+        }
+
+        if (receiverWallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Receiver wallet is currently ${receiverWallet.status}. Transaction is not allowed.`);
         }
 
 
@@ -256,6 +272,7 @@ const sendMoney = async (payload: { senderUserId: string; receiverId: string; am
 };
 
 
+
 // cash in
 const cashIn = async (payload: { agentUserId: string; targetUserId: string; amount: number | string; role: string }) => {
     const { agentUserId, targetUserId, amount, role } = payload;
@@ -286,6 +303,10 @@ const cashIn = async (payload: { agentUserId: string; targetUserId: string; amou
             throw new AppError(httpStatus.NOT_FOUND, 'Agent wallet not found. Please ensure the agent has a wallet.');
         }
 
+        if (agentWallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Agent's wallet is currently ${agentWallet.status}. Cannot perform cash-in.`);
+        }
+
         if (agentWallet.balance < parsedAmount) {
             throw new AppError(httpStatus.BAD_REQUEST, 'Agent has insufficient balance to perform this cash-in.');
         }
@@ -293,6 +314,10 @@ const cashIn = async (payload: { agentUserId: string; targetUserId: string; amou
         const targetUserWallet = await Wallet.findOne({ userId: new Types.ObjectId(targetUserId) }).session(session);
         if (!targetUserWallet) {
             throw new AppError(httpStatus.NOT_FOUND, 'Target user or their wallet not found.');
+        }
+
+        if (targetUserWallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Target user's wallet is currently ${targetUserWallet.status}. Transaction is not allowed.`);
         }
 
 
@@ -394,9 +419,18 @@ const cashOut = async (payload: { agentUserId: string; targetUserId: string; amo
             throw new AppError(httpStatus.NOT_FOUND, 'Agent wallet not found. Please ensure the agent has a wallet.');
         }
 
+        if (agentWallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Agent's wallet is currently ${agentWallet.status}. Cannot perform cash-out.`);
+        }
+
         const targetUserWallet = await Wallet.findOne({ userId: new Types.ObjectId(targetUserId) }).session(session);
+
         if (!targetUserWallet) {
             throw new AppError(httpStatus.NOT_FOUND, 'Target user or their wallet not found.');
+        }
+
+        if (targetUserWallet.status !== IsActive.ACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `Target user's wallet is currently ${targetUserWallet.status}. Transaction is not allowed.`);
         }
 
         if (targetUserWallet.balance < parsedAmount) {

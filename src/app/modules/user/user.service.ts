@@ -159,6 +159,7 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
 }
 
 
+
 //get all agents
 const getAllAgents = async (query: Record<string, string>) => {
     // Define searchable fields specific for agents (which are also users)
@@ -187,7 +188,7 @@ const getAllAgents = async (query: Record<string, string>) => {
 
 
 const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) => {
-    // 1. ইউজার খুঁজে বের করা এবং নিশ্চিত করা যে সে একজন এজেন্ট।
+    
     const user = await User.findById(new Types.ObjectId(userId));
     if (!user) {
         throw new AppError(httpStatus.NOT_FOUND, 'User (Agent) not found.');
@@ -196,7 +197,7 @@ const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) =>
         throw new AppError(httpStatus.FORBIDDEN, 'The user is not an agent.');
     }
     
-    // 2. এজেন্টের isApproved স্ট্যাটাস আপডেট করা।
+
     user.isApproved = isApproved;
     await user.save();
 
