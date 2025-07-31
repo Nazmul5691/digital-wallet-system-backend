@@ -5,6 +5,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from 'http-status-codes';
 import { JwtPayload } from "jsonwebtoken";
 import AppError from "../../errorHelpers/appError";
+import { Role } from "./user.interface";
 
 
 
@@ -39,17 +40,18 @@ const getAllUsers = catchAsync(async (req: Request, res: Response, next: NextFun
 
 
 // get single user
-const getSingleUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params.id;
-    const result = await UserServices.getSingleUser(id);
+const getSingleUser = catchAsync(async (req: Request, res: Response) => {
+    const { id: requestedUserId } = req.params;
+
+    const result = await UserServices.getSingleUser(requestedUserId);
 
     sendResponse(res, {
+        statusCode: httpStatus.OK,
         success: true,
-        statusCode: httpStatus.CREATED,
-        message: "User Retrieved Successfully",
-        data: result.data
-    })
-})
+        message: "User fetched successfully!",
+        data: result,
+    });
+});
 
 
 // delete a user
@@ -109,7 +111,7 @@ const updateAgentApprovalStatus = catchAsync(async (req: Request, res: Response)
     const { userId } = req.params;
     const { isApproved } = req.body as { isApproved: boolean };
 
-    
+
     if (typeof isApproved !== 'boolean') {
         throw new AppError(httpStatus.BAD_REQUEST, 'The "isApproved" status must be a boolean value (true/false).');
     }

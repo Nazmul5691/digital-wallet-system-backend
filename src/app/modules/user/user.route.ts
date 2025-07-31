@@ -18,7 +18,7 @@ router.get("/all-users", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserController
 
 router.get('/agents', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.getAllAgents);
 
-router.get("/:id", checkAuth(...Object.values(Role)), UserControllers.getSingleUser);
+router.get("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.getSingleUser);
 
 router.delete("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.deleteUser)
 
