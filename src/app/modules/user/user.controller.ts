@@ -1,16 +1,15 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { UserServices } from "./user.service";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from 'http-status-codes';
 import { JwtPayload } from "jsonwebtoken";
 import AppError from "../../errorHelpers/appError";
-import { Role } from "./user.interface";
 
 
 
 // create User
-const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const createUser = catchAsync(async (req: Request, res: Response) => {
     const user = await UserServices.createUser(req.body);
 
     sendResponse(res, {
@@ -24,7 +23,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 
 
 // get all users
-const getAllUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
     const query = req.query
     const result = await UserServices.getAllUsers(query as Record<string, string>);
@@ -70,7 +69,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
 
 //update user
-const updateUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const updateUser = catchAsync(async (req: Request, res: Response) => {
 
     const userId = req.params.id;
     // const token = req.headers.authorization;

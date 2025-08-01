@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Transaction } from '../transaction/transaction.model';
 import mongoose, { Types } from 'mongoose';

@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import httpStatus from 'http-status-codes';
 import { setAuthCookie } from "../../utils/setCookie";
@@ -8,7 +8,7 @@ import AppError from "../../errorHelpers/appError";
 
 
 // credentials Login
-const credentialsLogin = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const credentialsLogin = catchAsync(async (req: Request, res: Response) => {
     const loginInfo = await AuthServices.credentialsLogin(req.body);
 
     const { accessToken, refreshToken, user } = loginInfo;
@@ -29,7 +29,7 @@ const credentialsLogin = catchAsync(async (req: Request, res: Response, next: Ne
 
 
 // get New Access Token 
-const getNewAccessToken = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const getNewAccessToken = catchAsync(async (req: Request, res: Response) => {
 
     const refreshToken = req.cookies.refreshToken;
 
@@ -51,7 +51,7 @@ const getNewAccessToken = catchAsync(async (req: Request, res: Response, next: N
 
 
 // logout
-const logout = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+const logout = catchAsync(async (req: Request, res: Response) => {
 
     res.clearCookie("accessToken", {
         httpOnly: true,

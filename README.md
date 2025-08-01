@@ -1,4 +1,4 @@
-# 💰 Digital Wallet API (Bkash/Nagad Clone)
+# 💰 Digital Wallet System API
 
 A secure, role-based digital wallet backend system built using **Express.js**, **TypeScript**, and **MongoDB (Mongoose)**.
 
@@ -44,7 +44,7 @@ src/
 ├── app/
 │   ├── config/ # Environment & DB configs
 │   ├── errorHelpers/ # Custom error handlers
-│   ├── helpers/ # Utility functions
+│   ├── helpers/ # helpers functions
 │   ├── interfaces/ # TS interfaces (User, Wallet, etc.)
 │   ├── middlewares/ # Auth, validation, error middleware
 │   ├── modules/
@@ -53,7 +53,7 @@ src/
 │   │   ├── wallet/ # Wallet operations
 │   │   └── transaction/ # History, money transfers
 │   ├── routes/ # Combines all routers
-│   ├── utils/ # Constants, reusable tools
+│   ├── utils/ # utilities functions, reusable tools
 │   └── constants.ts
 ├── app.ts # Express app config
 ├── server.ts # App server runner

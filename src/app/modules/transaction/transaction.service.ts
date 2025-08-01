@@ -6,11 +6,11 @@ import { Transaction } from "./transaction.model";
 
 
 
-interface IGetTransactionsPayload {
-    authenticatedUserId: string; 
-    role: string; 
-    query: Record<string, string>; 
-}
+// interface IGetTransactionsPayload {
+//     authenticatedUserId: string; 
+//     role: string; 
+//     query: Record<string, string>; 
+// }
 
 
 
