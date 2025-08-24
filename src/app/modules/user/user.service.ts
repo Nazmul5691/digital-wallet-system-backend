@@ -121,7 +121,7 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
         throw new AppError(httpStatus.BAD_REQUEST, "Email cannot be updated");
     }
 
-    if (payload.name || payload.address || payload.password) {
+    if (payload.name || payload.address || payload.password || payload.phone) {
         if (decodedToken.userId !== userId) {
             throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to update this information");
         }
@@ -172,6 +172,37 @@ const getAllAgents = async (query: Record<string, string>) => {
 };
 
 
+//get me
+const getMe = async (userId: string) => {
+    const user = await User.findById(userId).select("-password");
+
+    return {
+        data: user
+    }
+};
+
+
+const searchUserByPhoneOrEmail = async (searchTerm: string) => {
+    // The search term is escaped to prevent regex injection attacks
+    const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedSearchTerm, 'i');
+
+    const user = await User.findOne({
+        $or: [
+            { email: regex },
+            { phone: regex }
+        ],
+        isDeleted: false,
+    }).select('_id name'); // Return only the user's ID and name for security and efficiency
+
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found.');
+    }
+
+    return user;
+};
+
+
 
 // update Agent Approval Status
 const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) => {
@@ -198,8 +229,10 @@ export const UserServices = {
     createUser,
     getAllUsers,
     getSingleUser,
+    getMe,
     deleteUser,
     updateUser,
     getAllAgents,
+    searchUserByPhoneOrEmail,
     updateAgentApprovalStatus
 }

@@ -7,15 +7,32 @@ import { TransactionServices } from "./transaction.service";
 
 
 // view my transaction
-const viewMyTransactionHistory = catchAsync(async (req: Request, res: Response) => {
-    const { userId } = req.user;
+// const viewMyTransactionHistory = catchAsync(async (req: Request, res: Response) => {
+//     const { userId } = req.user;
 
-    const result = await TransactionServices.viewMyTransactionHistory(userId,req.query as Record<string, string>);
+//     const result = await TransactionServices.viewMyTransactionHistory(userId,req.query as Record<string, string>);
+
+//     sendResponse(res, {
+//         statusCode: httpStatus.OK,
+//         success: true,
+//         message: 'Transaction history retrieved successfully!',
+//         data: result.data,
+//         meta: result.meta,
+//     });
+// });
+
+const viewMyTransactionHistory = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.user as { userId: string };
+
+    const result = await TransactionServices.viewMyTransactionHistory(
+        userId,
+        req.query as Record<string, string>
+    );
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: 'Transaction history retrieved successfully!',
+        message: "Transaction history retrieved successfully!",
         data: result.data,
         meta: result.meta,
     });

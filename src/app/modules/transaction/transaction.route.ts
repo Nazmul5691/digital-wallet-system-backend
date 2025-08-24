@@ -8,7 +8,7 @@ const router = Router();
 
 
 
-router.get('/my-history',checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN),TransactionControllers.viewMyTransactionHistory);
+router.get('/my-history',checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN, Role.AGENT),TransactionControllers.viewMyTransactionHistory);
 
 router.get('/all', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), TransactionControllers.getAllTransactions);
 

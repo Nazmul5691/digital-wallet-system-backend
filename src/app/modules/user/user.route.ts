@@ -18,6 +18,10 @@ router.get("/all-users", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserController
 
 router.get('/agents', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.getAllAgents);
 
+router.get("/me", checkAuth(...Object.values(Role)), UserControllers.getMe);
+
+router.get("/search", checkAuth(...Object.values(Role)), UserControllers.searchUser);
+
 router.get("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.getSingleUser);
 
 router.delete("/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserControllers.deleteUser)

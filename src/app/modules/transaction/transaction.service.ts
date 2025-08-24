@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Types } from "mongoose";
 import AppError from "../../errorHelpers/appError";
 import httpStatus from 'http-status-codes';
@@ -15,8 +16,32 @@ import { Transaction } from "./transaction.model";
 
 
 // view My Transaction History
-const viewMyTransactionHistory = async (userId: string,query: Record<string, string>) => {
+// const viewMyTransactionHistory = async (userId: string,query: Record<string, string>) => {
 
+//     const filterQuery: Record<string, any> = {
+//         $or: [
+//             { senderId: new Types.ObjectId(userId) },
+//             { receiverId: new Types.ObjectId(userId) },
+//         ],
+//     };
+
+
+//     if (query.type) filterQuery.type = query.type;
+
+//     const queryBuilder = new QueryBuilder(Transaction.find(filterQuery), query)
+//         .sort()
+//         .filter()
+//         .paginate();
+
+//     const [data, meta] = await Promise.all([
+//         queryBuilder.build().lean(),
+//         queryBuilder.getMeta(),
+//     ]);
+
+//     return { data, meta };
+// };
+
+const viewMyTransactionHistory = async (userId: string, query: Record<string, string>): Promise<any> => {
     const filterQuery: Record<string, any> = {
         $or: [
             { senderId: new Types.ObjectId(userId) },
@@ -24,10 +49,37 @@ const viewMyTransactionHistory = async (userId: string,query: Record<string, str
         ],
     };
 
-    
-    if (query.type) filterQuery.type = query.type;
+    if (query.type && query.type !== 'all') {
+        filterQuery.type = query.type;
+    }
 
-    const queryBuilder = new QueryBuilder(Transaction.find(filterQuery), query)
+    if (query.startDate || query.endDate) {
+        filterQuery.createdAt = {};
+
+        if (query.startDate) {
+            const start = new Date(query.startDate);
+            // Sets the start of the day in UTC, e.g., '2025-08-22T00:00:00.000Z'
+            start.setUTCHours(0, 0, 0, 0);
+            filterQuery.createdAt.$gte = start;
+        }
+
+        if (query.endDate) {
+            const end = new Date(query.endDate);
+            // Sets the end of the day in UTC, e.g., '2025-08-22T23:59:59.999Z'
+            end.setUTCHours(23, 59, 59, 999);
+            filterQuery.createdAt.$lte = end;
+        }
+    }
+
+    // const queryBuilder = new QueryBuilder(Transaction.find(filterQuery), query)
+    //     .sort()
+    //     .filter()
+    //     .paginate();
+
+    const queryBuilder = new QueryBuilder(
+        Transaction.find(filterQuery).populate("senderId receiverId", "name"),
+        query
+    )
         .sort()
         .filter()
         .paginate();

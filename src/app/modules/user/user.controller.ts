@@ -52,6 +52,21 @@ const getSingleUser = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+//get me
+const getMe = catchAsync(async (req: Request, res: Response) => {
+
+    const decodedToken = req.user as JwtPayload
+    
+    const result = await UserServices.getMe(decodedToken.userId);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Your profile retrieved successfully",
+        data: result.data,
+    });
+})
+
 
 // delete a user
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
@@ -104,6 +119,24 @@ const getAllAgents = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const searchUser = catchAsync(async (req: Request, res: Response) => {
+    const { query } = req.query;
+
+    if (!query || typeof query !== 'string') {
+        throw new AppError(httpStatus.BAD_REQUEST, 'A search query (phone number or email) is required.');
+    }
+
+    const result = await UserServices.searchUserByPhoneOrEmail(query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'User found successfully!',
+        data: result,
+    });
+});
+
+
 
 // update Agent Approval Status
 const updateAgentApprovalStatus = catchAsync(async (req: Request, res: Response) => {
@@ -131,8 +164,10 @@ export const UserControllers = {
     createUser,
     getAllUsers,
     getSingleUser,
+    getMe,
     deleteUser,
     updateUser,
     getAllAgents,
+    searchUser,
     updateAgentApprovalStatus
 }
