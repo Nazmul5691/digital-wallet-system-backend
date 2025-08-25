@@ -5,6 +5,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from 'http-status-codes';
 import { JwtPayload } from "jsonwebtoken";
 import AppError from "../../errorHelpers/appError";
+import { IsActive } from "./user.interface";
 
 
 
@@ -137,6 +138,27 @@ const searchUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { isActive } = req.body as { isActive: IsActive };
+
+    // 1. Validate the input
+    if (!Object.values(IsActive).includes(isActive)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status provided. Must be ACTIVE or BLOCKED.');
+    }
+
+    // 2. Call the service to update the user's status
+    const result = await UserServices.updateUserStatus(userId, isActive);
+
+    // 3. Send a success response
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'User status updated successfully.',
+        data: result,
+    });
+});
+
 
 // update Agent Approval Status
 const updateAgentApprovalStatus = catchAsync(async (req: Request, res: Response) => {
@@ -169,5 +191,6 @@ export const UserControllers = {
     updateUser,
     getAllAgents,
     searchUser,
+    updateUserStatus,
     updateAgentApprovalStatus
 }

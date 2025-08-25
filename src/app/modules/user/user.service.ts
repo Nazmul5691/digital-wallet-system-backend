@@ -4,7 +4,7 @@ import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/appError";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import { userSearchableFields } from "./user.constant";
-import { IAuthProvider, IUser, Role } from "./user.interface";
+import { IAuthProvider, IsActive, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
 import bcryptjs from 'bcryptjs'
 import httpStatus from 'http-status-codes';
@@ -203,6 +203,30 @@ const searchUserByPhoneOrEmail = async (searchTerm: string) => {
 };
 
 
+const updateUserStatus = async (userId: string, isActive: IsActive) => {
+    // 1. Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    // 2. Prevent blocking an admin or super admin
+    if (user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN) {
+        throw new AppError(httpStatus.FORBIDDEN, 'Cannot block/unblock a super admin or admin.');
+    }
+
+    // 3. Update the user's status
+    user.isActive = isActive;
+    await user.save();
+
+    // 4. Update the wallet status to match the user status
+    if (user.walletId) {
+        await Wallet.findByIdAndUpdate(user.walletId, { status: isActive });
+    }
+
+    return user;
+};
+
 
 // update Agent Approval Status
 const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) => {
@@ -234,5 +258,6 @@ export const UserServices = {
     updateUser,
     getAllAgents,
     searchUserByPhoneOrEmail,
+    updateUserStatus,
     updateAgentApprovalStatus
 }
