@@ -12,6 +12,11 @@ router.post('/deposit', checkAuth(Role.ADMIN, Role.SUPER_ADMIN, Role.USER), Wall
 router.post('/withdraw', checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.withdraw);
 router.post('/send-money', checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.sendMoney);
 router.patch('/deactivate', checkAuth(Role.USER, Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.deactivateMyWallet);
+router.get(
+  '/my-wallet',
+  checkAuth(Role.USER, Role.AGENT, Role.ADMIN, Role.SUPER_ADMIN),
+  WalletControllers.getMyWallet
+);
 
 
 
@@ -25,6 +30,7 @@ router.post('/cash-out', checkAuth(Role.AGENT), WalletControllers.cashOut);
 router.get('/', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.getAllWallets);
 router.patch('/block/:id', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.blockWallet);
 router.patch('/unblock/:id', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), WalletControllers.unblockWallet);
+
 
 
 

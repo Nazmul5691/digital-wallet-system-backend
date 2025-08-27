@@ -179,6 +179,19 @@ const deactivateMyWallet = catchAsync(async (req, res) => {
 });
 
 
+const getMyWallet = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.userId;
+
+  const result = await WalletServices.getMyWallet(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Wallet fetched successfully!',
+    data: result,
+  });
+});
+
 
 
 export const WalletControllers = {
@@ -190,5 +203,6 @@ export const WalletControllers = {
     getAllWallets,
     blockWallet,
     unblockWallet,
-    deactivateMyWallet
+    deactivateMyWallet,
+    getMyWallet
 }

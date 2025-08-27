@@ -139,6 +139,19 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
     }
 
 
+    if (payload.phone) {
+    // Check if any other user has this phone
+    const phoneExists = await User.findOne({
+        phone: payload.phone,
+        _id: { $ne: userId } // exclude current user
+    });
+
+    if (phoneExists) {
+        throw new AppError(httpStatus.BAD_REQUEST, "Phone number already exists");
+    }
+}
+
+
     const newUpdatedUser = await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true })
 
     return newUpdatedUser;
@@ -245,7 +258,6 @@ const updateAgentApprovalStatus = async (userId: string, isApproved: boolean) =>
 
     return user;
 };
-
 
 
 

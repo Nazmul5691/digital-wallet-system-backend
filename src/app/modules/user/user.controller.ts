@@ -192,5 +192,5 @@ export const UserControllers = {
     getAllAgents,
     searchUser,
     updateUserStatus,
-    updateAgentApprovalStatus
+    updateAgentApprovalStatus,
 }

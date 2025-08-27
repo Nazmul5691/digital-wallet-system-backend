@@ -1,20 +1,21 @@
-// import { NextFunction, Request, Response } from "express";
-// import { AnyZodObject } from "zod";
 
-// export const validateRequest = (zodSchema: AnyZodObject) => async (req: Request, res: Response, next: NextFunction) => {
+import { NextFunction, Request, Response } from "express";
+import { AnyZodObject } from "zod";
 
-//     try {
-//         // req.body = JSON.parse(req.body.data || {}) || req.body;
-//         if(req.body.data){
-//             req.body = JSON.parse(req.body.data)
-//         }
-//         req.body = await zodSchema.parseAsync(req.body);
-//         next();
+export const validateRequest = (zodSchema: AnyZodObject) => async (req: Request, res: Response, next: NextFunction) => {
 
-//     } catch (error) {
-//         next(error)
-//     }
-// }
+    try {
+        // req.body = JSON.parse(req.body.data || {}) || req.body;
+        if(req.body.data){
+            req.body = JSON.parse(req.body.data)
+        }
+        req.body = await zodSchema.parseAsync(req.body);
+        next();
+
+    } catch (error) {
+        next(error)
+    }
+}
 
 
 // import { NextFunction, Request, Response } from "express";
@@ -38,27 +39,27 @@
 
 
 // src/app/middlewares/validateRequest.ts
-import { NextFunction, Request, Response } from "express";
-import { AnyZodObject } from "zod";
+// import { NextFunction, Request, Response } from "express";
+// import { AnyZodObject } from "zod";
 
-export const validateRequest = (zodSchema: AnyZodObject) => async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const bodyToValidate = req.body.data ? JSON.parse(req.body.data) : req.body;
+// export const validateRequest = (zodSchema: AnyZodObject) => async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const bodyToValidate = req.body.data ? JSON.parse(req.body.data) : req.body;
 
-    // Validate body
-    req.body = await zodSchema.parseAsync(bodyToValidate);
+//     // Validate body
+//     req.body = await zodSchema.parseAsync(bodyToValidate);
 
-    next();
-  } catch (error: any) {
-    // Return all Zod validation errors
-    if (error?.errors) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: error.errors,
-      });
-    }
-    next(error);
-  }
-};
+//     next();
+//   } catch (error: any) {
+//     // Return all Zod validation errors
+//     if (error?.errors) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Validation failed",
+//         errors: error.errors,
+//       });
+//     }
+//     next(error);
+//   }
+// };
 

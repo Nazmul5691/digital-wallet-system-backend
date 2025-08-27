@@ -34,6 +34,9 @@ router.patch('/status/:userId', checkAuth(Role.ADMIN, Role.SUPER_ADMIN), UserCon
 router.patch('/agents/approval-status/:userId',checkAuth(Role.ADMIN, Role.SUPER_ADMIN),UserControllers.updateAgentApprovalStatus);
 
 
+// router.get("/check-phone/:phone", checkAuth(...Object.values(Role)), UserControllers.checkPhone);
+
+
 
 
 export const UserRoutes = router;

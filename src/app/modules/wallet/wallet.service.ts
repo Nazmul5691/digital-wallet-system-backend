@@ -588,6 +588,21 @@ const deactivateMyWallet = async (userId: string, status: IsActive) => {
 };
 
 
+const getMyWallet = async (userId: string) => {
+  const wallet = await Wallet.findOne({
+    userId: new Types.ObjectId(userId),
+  })
+    .select('_id balance status createdAt updatedAt')
+    .lean();
+
+  if (!wallet) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Wallet not found.');
+  }
+
+  return wallet;
+};
+
+
 
 export const WalletServices = {
     deposit,
@@ -597,6 +612,7 @@ export const WalletServices = {
     cashOut,
     getAllWallets,
     updateWalletStatus,
-    deactivateMyWallet
+    deactivateMyWallet,
+    getMyWallet
 };
 

@@ -38,9 +38,17 @@ const userSchema = new Schema<IUser>(
             enum: Object.values(Role),
             default: Role.USER
         },
+        // phone: {
+        //     type: String,
+        //     unique: true,
+        //     sparse: true
+        // },
         phone: {
             type: String,
-            // unique: true
+            // unique: true,
+            sparse: true, // this allows multiple docs without phone
+            required: false, // make sure Mongoose doesn't force phone
+            default: undefined // avoid storing null
         },
         picture: {
             type: String
